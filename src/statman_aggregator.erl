@@ -40,6 +40,7 @@ get_keys() ->
 
 init([]) ->
     timer:send_interval(10000, push),
+    timer:send_interval(301000, purge),
     {ok, #state{metrics = dict:new()}}.
 
 handle_call({add_subscriber, Ref}, _From, #state{subscribers = Sub} = State) ->
@@ -74,8 +75,15 @@ handle_cast({statman_update, NewSamples}, #state{metrics = Metrics} = State) ->
     NewMetrics = lists:foldl(fun insert/2, Metrics, NewSamples),
     {noreply, State#state{metrics = NewMetrics}}.
 
+handle_info(purge, #state{metrics = Metrics} = State) ->
+    PurgedMetrics = dict:map(fun (_, {Type, Samples}) ->
+                                     {Type, purge(Samples)}
+                             end, Metrics),
+    {noreply, State#state{metrics = PurgedMetrics}};
+
 handle_info(_, State) ->
     {noreply, State}.
+
 
 terminate(_Reason, _State) ->
     ok.
