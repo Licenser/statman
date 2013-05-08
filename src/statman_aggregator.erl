@@ -18,7 +18,6 @@
           subscribers = [],
           last_sample = [],
           metrics = dict:new()
-
          }).
 
 %%%===================================================================
@@ -75,10 +74,16 @@ handle_cast({statman_update, NewSamples}, #state{metrics = Metrics} = State) ->
     NewMetrics = lists:foldl(fun insert/2, Metrics, NewSamples),
     {noreply, State#state{metrics = NewMetrics}}.
 
+%% This sucks big time, sadly when there is littel activity here this
+%% process keeps growing and growing w/o being prurged or garbace collected.
+%% That is why we have to take care of tis manually.
 handle_info(purge, #state{metrics = Metrics} = State) ->
     PurgedMetrics = dict:map(fun (_, {Type, Samples}) ->
                                      {Type, purge(Samples)}
                              end, Metrics),
+    erlang:garbage_collect(),
+    erlang:garbage_collect(),
+    erlang:garbage_collect(),
     {noreply, State#state{metrics = PurgedMetrics}};
 
 handle_info(_, State) ->
