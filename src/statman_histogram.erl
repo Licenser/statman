@@ -32,7 +32,7 @@ record_value(UserKey, {MegaSecs, Secs, MicroSecs}) when
     is_integer(Secs) andalso Secs >=0 andalso
     is_integer(MicroSecs) andalso MicroSecs >= 0 ->
     record_value(UserKey,
-        timer:now_diff(now(), {MegaSecs, Secs, MicroSecs}));
+                 bin(timer:now_diff(now(), {MegaSecs, Secs, MicroSecs})));
 
 record_value(UserKey, Value) when is_integer(Value) ->
     histogram_incr({UserKey, Value}, 1),
